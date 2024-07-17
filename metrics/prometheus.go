@@ -1,11 +1,12 @@
 package metrics
 
 import (
+	"github.com/HuckOps/ikuai_exporter/ikuai"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"ikuai_exporter/ikuai"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -19,7 +20,17 @@ func NewPrometheus() *Prometheus {
 	http.Handle("/metrics", promhttp.HandlerFor(registry,
 		promhttp.HandlerOpts{Registry: registry}))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
+		_, err := w.Write([]byte(`<html>
+			<head><title>A Prometheus Exporter</title></head>
+			<body>
+			<h1>A Prometheus Exporter</h1>
+			<p><a href='/metrics'>Metrics</a></p>
+			</body>
+			</html>`))
+		if err != nil {
+			log.Println("运行exporter错误", err)
+			os.Exit(1)
+		}
 	})
 	return &Prometheus{
 		Registry: registry,
@@ -36,8 +47,8 @@ func (c *Prometheus) NewMetrics(namespace string) {
 	c.Metrics = m
 }
 
-func (c *Prometheus) Run() {
-	ikuaiClient := ikuai.NewClient("192.168.229.5", "admin", "123456.")
+func (c *Prometheus) Run(ip, username, password string) {
+	ikuaiClient := ikuai.NewClient(ip, username, password)
 	ikuaiClient.Login()
 	go func() {
 		http.ListenAndServe(":9100", nil)
